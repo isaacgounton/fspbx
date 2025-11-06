@@ -64,8 +64,8 @@ services:
       - ./storage:/var/www/fspbx/storage
       - ./bootstrap/cache:/var/www/fspbx/bootstrap/cache
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     networks:
       - fspbx-network
     depends_on:
