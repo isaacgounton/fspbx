@@ -39,7 +39,7 @@ services:
 
   # FreeSWITCH
   freeswitch:
-    image: signalwire/freeswitch:latest
+    image: safarov/freeswitch:latest
     container_name: fspbx-freeswitch
     restart: unless-stopped
     network_mode: host
