@@ -34,8 +34,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy existing application directory contents
 COPY . /var/www/fspbx
 
+# Create necessary directories
+RUN mkdir -p /var/www/fspbx/storage/framework/{cache,sessions,views} \
+    && mkdir -p /var/www/fspbx/storage/logs \
+    && mkdir -p /var/www/fspbx/bootstrap/cache
+
 # Install composer dependencies as root first
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer install --no-interaction --optimize-autoloader --no-dev --verbose || \
+    composer install --no-interaction --no-dev --verbose
 
 # Install npm dependencies and build assets as root
 RUN npm install && npm run build
