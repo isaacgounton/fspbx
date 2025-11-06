@@ -16,13 +16,14 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nodejs \
-    npm \
     supervisor \
     nginx
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install Node.js (LTS) for asset builds
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g npm@10 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
