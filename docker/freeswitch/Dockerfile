@@ -6,4 +6,3 @@ FROM safarov/freeswitch:latest
 # Provide a standard CA bundle path for modules that expect Debian-style locations
 COPY --from=certs /etc/ssl /etc/ssl
 COPY --from=certs /usr/share/ca-certificates /usr/share/ca-certificates
-USER freeswitch
