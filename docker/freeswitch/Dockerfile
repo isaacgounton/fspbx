@@ -1,15 +1,20 @@
 FROM safarov/freeswitch:latest
 
-# Ensure CA bundles are present for TLS-enabled modules such as mod_signalwire
+# Ensure CA bundles are reachable from the Debian-style path expected by mod_signalwire
 RUN set -eux; \
-    if command -v apt-get >/dev/null 2>&1; then \
-        apt-get update; \
-        apt-get install -y --no-install-recommends ca-certificates; \
-        rm -rf /var/lib/apt/lists/*; \
-    elif command -v apk >/dev/null 2>&1; then \
-        apk add --no-cache ca-certificates; \
-    else \
-        echo "Unsupported base image: no known package manager found" >&2; \
-        exit 1; \
-    fi; \
-    update-ca-certificates
+    TARGET=/etc/ssl/certs/ca-certificates.crt; \
+    if [ -f "$TARGET" ]; then exit 0; fi; \
+    mkdir -p "$(dirname "$TARGET")"; \
+    for SRC in \
+        /etc/ssl/certs/ca-bundle.crt \
+        /etc/ssl/cert.pem \
+        /etc/pki/tls/certs/ca-bundle.crt \
+        /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem \
+    ; do \
+        if [ -f "$SRC" ]; then \
+            ln -sf "$SRC" "$TARGET"; \
+            exit 0; \
+        fi; \
+    done; \
+    echo "Could not locate a CA bundle to link into $TARGET" >&2; \
+    exit 1

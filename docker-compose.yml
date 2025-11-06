@@ -98,6 +98,13 @@ services:
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=database
       - QUEUE_CONNECTION=redis
+      - BROADCAST_DRIVER=${BROADCAST_DRIVER:-log}
+      - PUSHER_APP_ID=${PUSHER_APP_ID:-}
+      - PUSHER_APP_KEY=${PUSHER_APP_KEY:-}
+      - PUSHER_APP_SECRET=${PUSHER_APP_SECRET:-}
+      - PUSHER_APP_CLUSTER=${PUSHER_APP_CLUSTER:-}
+      - MIX_PUSHER_APP_KEY=${MIX_PUSHER_APP_KEY:-}
+      - MIX_PUSHER_APP_CLUSTER=${MIX_PUSHER_APP_CLUSTER:-}
 
   # Queue Worker
   queue:
@@ -126,6 +133,11 @@ services:
       - DB_PASSWORD=${DB_PASSWORD:-fusionpbx_secure_password}
       - REDIS_HOST=redis
       - QUEUE_CONNECTION=redis
+      - BROADCAST_DRIVER=${BROADCAST_DRIVER:-log}
+      - PUSHER_APP_ID=${PUSHER_APP_ID:-}
+      - PUSHER_APP_KEY=${PUSHER_APP_KEY:-}
+      - PUSHER_APP_SECRET=${PUSHER_APP_SECRET:-}
+      - PUSHER_APP_CLUSTER=${PUSHER_APP_CLUSTER:-}
 
 networks:
   fspbx-network:
