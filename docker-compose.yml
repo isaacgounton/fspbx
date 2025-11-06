@@ -55,6 +55,7 @@ services:
       - SOUND_RATES=${SOUND_RATES:-8000,16000,32000}
       - SOUND_TYPES=${SOUND_TYPES:-music,moh}
       - SOUND_LANG=${SOUND_LANG:-en-us}
+      - SOUND_LANGS=${SOUND_LANGS:-en-us}
     cap_add:
       - SYS_NICE
       - IPC_LOCK
@@ -71,7 +72,6 @@ services:
     restart: unless-stopped
     working_dir: /var/www/fspbx
     volumes:
-      - ./:/var/www/fspbx
       - ./storage:/var/www/fspbx/storage
       - ./bootstrap/cache:/var/www/fspbx/bootstrap/cache
     ports:
