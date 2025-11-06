@@ -1,0 +1,133 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17
+    container_name: fspbx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fusionpbx
+      POSTGRES_USER: fusionpbx
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fusionpbx_secure_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - fspbx-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fusionpbx"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: fspbx-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - fspbx-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FreeSWITCH
+  freeswitch:
+    image: signalwire/freeswitch:latest
+    container_name: fspbx-freeswitch
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - freeswitch_config:/etc/freeswitch
+      - freeswitch_sounds:/usr/share/freeswitch/sounds
+      - freeswitch_recordings:/var/lib/freeswitch/recordings
+      - freeswitch_storage:/var/lib/freeswitch/storage
+    environment:
+      - FREESWITCH_ESL_PASSWORD=${FS_ESL_PW:-ClueCon}
+
+  # Laravel Application (PHP-FPM + Nginx)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fspbx-app
+    restart: unless-stopped
+    working_dir: /var/www/fspbx
+    volumes:
+      - ./:/var/www/fspbx
+      - ./storage:/var/www/fspbx/storage
+      - ./bootstrap/cache:/var/www/fspbx/bootstrap/cache
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - fspbx-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-fusionpbx}
+      - DB_USERNAME=${DB_USERNAME:-fusionpbx}
+      - DB_PASSWORD=${DB_PASSWORD:-fusionpbx_secure_password}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_DRIVER=redis
+      - SESSION_DRIVER=database
+      - QUEUE_CONNECTION=redis
+
+  # Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fspbx-queue
+    restart: unless-stopped
+    working_dir: /var/www/fspbx
+    command: php artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - ./:/var/www/fspbx
+    networks:
+      - fspbx-network
+    depends_on:
+      - app
+      - redis
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-fusionpbx}
+      - DB_USERNAME=${DB_USERNAME:-fusionpbx}
+      - DB_PASSWORD=${DB_PASSWORD:-fusionpbx_secure_password}
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=redis
+
+networks:
+  fspbx-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  freeswitch_config:
+    driver: local
+  freeswitch_sounds:
+    driver: local
+  freeswitch_recordings:
+    driver: local
+  freeswitch_storage:
+    driver: local
