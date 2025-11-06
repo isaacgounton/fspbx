@@ -1,5 +1,11 @@
 /node_modules
 /public/*
+!/public/.gitkeep
+!/public/index.php
+!/public/resources/
+!/public/resources/**
+!/public/app/
+!/public/app/**
 /public/storage
 /storage/*
 /storage/*.key

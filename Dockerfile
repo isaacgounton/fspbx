@@ -1,5 +1,7 @@
 FROM php:8.1-fpm
 
+ARG FUSIONPBX_VERSION=latest
+
 # Set working directory
 WORKDIR /var/www/fspbx
 
@@ -33,6 +35,23 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Copy existing application directory contents
 COPY . /var/www/fspbx
+
+# Pull in FusionPBX public assets that legacy includes expect
+RUN set -euo pipefail \
+    && rm -rf /var/www/fspbx/public \
+    && mkdir -p /var/www/fspbx/public \
+    && RELEASE_URL="" \
+    && if [ "$FUSIONPBX_VERSION" = "latest" ]; then \
+        FUSIONPBX_VERSION=$(curl -sS https://api.github.com/repos/nemerald-voip/fusionpbx/releases/latest | grep '"tag_name"' | head -n1 | cut -d '"' -f4 || true); \
+    fi \
+    && if [ -n "$FUSIONPBX_VERSION" ]; then \
+        RELEASE_URL="https://github.com/nemerald-voip/fusionpbx/archive/refs/tags/${FUSIONPBX_VERSION}.tar.gz"; \
+    else \
+        RELEASE_URL="https://github.com/nemerald-voip/fusionpbx/archive/refs/heads/master.tar.gz"; \
+    fi \
+    && curl -fSL "$RELEASE_URL" -o /tmp/fusionpbx.tar.gz \
+    && tar -xzf /tmp/fusionpbx.tar.gz -C /var/www/fspbx/public --strip-components=1 \
+    && rm /tmp/fusionpbx.tar.gz
 
 # Create necessary directories
 RUN mkdir -p /var/www/fspbx/storage/framework/{cache,sessions,views} \
