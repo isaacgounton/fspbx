@@ -34,20 +34,16 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy existing application directory contents
 COPY . /var/www/fspbx
 
-# Copy existing application directory permissions
-RUN chown -R www-data:www-data /var/www/fspbx
-
-# Change current user to www-data
-USER www-data
-
-# Install composer dependencies
+# Install composer dependencies as root first
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Install npm dependencies and build assets
+# Install npm dependencies and build assets as root
 RUN npm install && npm run build
 
-# Change back to root user
-USER root
+# Set proper permissions after installation
+RUN chown -R www-data:www-data /var/www/fspbx \
+    && chmod -R 755 /var/www/fspbx/storage \
+    && chmod -R 755 /var/www/fspbx/bootstrap/cache
 
 # Copy supervisor configuration
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
