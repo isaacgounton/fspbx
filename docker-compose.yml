@@ -39,7 +39,9 @@ services:
 
   # FreeSWITCH
   freeswitch:
-    image: safarov/freeswitch:latest
+    build:
+      context: docker/freeswitch
+      dockerfile: Dockerfile
     container_name: fspbx-freeswitch
     restart: unless-stopped
     network_mode: host
@@ -50,6 +52,14 @@ services:
       - freeswitch_storage:/var/lib/freeswitch/storage
     environment:
       - FREESWITCH_ESL_PASSWORD=${FS_ESL_PW:-ClueCon}
+      - SOUND_RATES=${SOUND_RATES:-8000,16000,32000}
+      - SOUND_TYPES=${SOUND_TYPES:-music,moh}
+    cap_add:
+      - SYS_NICE
+      - IPC_LOCK
+    ulimits:
+      rtprio: 99
+      memlock: -1
 
   # Laravel Application (PHP-FPM + Nginx)
   app:
@@ -97,7 +107,8 @@ services:
     container_name: fspbx-queue
     restart: unless-stopped
     working_dir: /var/www/fspbx
-    command: php artisan queue:work --sleep=3 --tries=3
+    entrypoint: ["php", "/var/www/fspbx/artisan"]
+    command: ["queue:work", "--sleep=3", "--tries=3"]
     volumes:
       - ./:/var/www/fspbx
     networks:
